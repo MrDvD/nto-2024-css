@@ -5,57 +5,21 @@ import math
 def beautify(num):
     return f'{round(num, 3):.3f}'
 
-# def dbfft(x, fs, win=None, ref=32768):
-#     """
-#     Calculate spectrum in dB scale
-#     Args:
-#         x: input signal
-#         fs: sampling frequency
-#         win: vector containing window samples (same length as x).
-#              If not provided, then rectangular window is used by default.
-#         ref: reference value used for dBFS scale. 32768 for int16 and 1 for float
+def dbfft(rfft, ref):
+    # win = np.ones((L - 1,))
+    # rfft = rfft * win
 
-#     Returns:
-#         freq: frequency vector
-#         s_db: spectrum in dB scale
-#     """
+    # Scale the magnitude of FFT by window and factor of 2,
+    # because we are using half of FFT spectrum.
+    s_mag = np.abs(rfft)
 
-#     N = len(x)  # Length of input sequence
+    # Convert to dBFS
+    s_dbfs = 20 * np.log10(s_mag/ref)
 
-#     if win is None:
-#         win = np.ones(shape=(N,))
-#     if len(x) != len(win):
-#             raise ValueError('Signal and window must be of the same length')
-#     x = x * win
+    return s_dbfs
 
-#     # Calculate real FFT and frequency vector
-#     sp = np.fft.rfft(x)
-#     freq = np.arange((N / 2)) / (float(N) / fs)
-
-#     # Scale the magnitude of FFT by window and factor of 2,
-#     # because we are using half of FFT spectrum.
-#     s_mag = np.abs(sp) * 2 / np.sum(win)
-
-#     # Convert to dBFS
-#     s_dbfs = 20 * np.log10(s_mag/ref)
-
-#     return freq, s_dbfs
-
-# def dbfft(rfft, L, ref=32768):
-#     # win = np.ones((L - 1,))
-#     # rfft = rfft * win
-
-#     # Scale the magnitude of FFT by window and factor of 2,
-#     # because we are using half of FFT spectrum.
-#     s_mag = np.abs(rfft)
-
-#     # Convert to dBFS
-#     s_dbfs = 20 * np.log10(s_mag/ref)
-
-#     return s_dbfs
-
-def dbfft(X, ref=32768):
-    return 20 * np.log10(X/ref)
+# def dbfft(X, ref=32768):
+#     return 20 * np.log10(X/ref)
 
 Fs = 1000
 T = 1 / Fs
@@ -95,9 +59,9 @@ ax2.set_title("Amplitude Spectrum")
 ax2.set_xlabel("Frequency [Hz]")
 ax2.set_ylabel("Amplitude, 10^3")
 
-Y = dbfft(X)
-t = np.arange(0, L - 1)
-ax3.plot(t, abs(Y))
+Y = dbfft(Y, 20)
+t = np.arange(1, L // 2)
+ax3.plot(t, abs(Y)[1:])
 ax3.set_title("Decibels")
 ax3.set_xlabel("Frequency [Hz]")
 ax3.set_ylabel("Intensity [dB]")
