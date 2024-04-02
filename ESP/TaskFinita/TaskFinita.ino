@@ -10,8 +10,11 @@ const char *ip = "192.168.123.176";
 int port = 7001;
 
 const int buff_size = 5000;
+int frames = 10;
 
 int buffer[buff_size];
+int buffera[buff_size];
+bool choice = 0;
 int pointer = 0;
 
 // QueueHandle_t QueueHandle;
@@ -68,14 +71,32 @@ void ss(void*params){
   WiFiClient client;
   client.connect(ip, port);
   if (client.connected()){
-    client.printf("WAV %d: ", packet1_num);
-    for (int i = 0; i < buff_size; i++){
-      // Serial.println(buffer[i]);
-      client.printf("%d ", buffer[i]);
-      // packet += std::to_string(buffer[i]);
-      // packet += " ";
+    std::string packet = "WAV ";
+    packet += std::to_string(packet1_num);
+    packet += " ";
+    // packet += std::to_string(j);
+    packet += std::to_string(frames);
+    packet += " ";
+    packet += std::to_string(buff_size);
+    client.printf(packet.c_str());
+    packet = "";
+    for (int j = 0; j < 10; j++) {
+      for (int i = 500*j; i < 500*(j+1) ; i++){
+        // Serial.println(buffer[i]);
+        // client.printf("%d ", buffer[i]);
+        if (choice)
+          packet += std::to_string(buffer[i]);
+        else
+          packet += std::to_string(buffera[i]);
+        if (i != buff_size - 1) {
+          packet += " ";
+        }
+        // delay(1);
+      }
+      client.printf(packet.c_str());
+      packet = "";
     }
-    client.printf("\n");
+    // Serial.println(packet.c_str());
 
     // String response = client.readString();
     // if (response == "") {
@@ -107,11 +128,19 @@ void ss(void*params){
 
 void IRAM_ATTR onTimer(){
   // message_t message;
-  buffer[pointer] = analogRead(34);
+  if (!choice){
+    buffer[pointer] = analogRead(34);
+    buffer[pointer] &= 0x0FFF;
+  }
+  else{
+    buffera[pointer] = analogRead(34);
+    buffera[pointer] &= 0x0FFF;
+  }
   pointer++;
-    if(pointer == 4999){
+    if(pointer == 5000){
       pointer = 0;
-      xTaskCreate(ss, "send", 10000, NULL, 1, NULL);
+      choice = !choice;
+      xTaskCreatePinnedToCore(ss, "send", 10000, NULL, 1, NULL, 1);
       // int ret = xQueueSend(QueueHandle, (void*) &message, 0);
 
     }
