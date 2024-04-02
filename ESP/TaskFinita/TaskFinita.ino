@@ -17,6 +17,8 @@ int buffera[buff_size];
 bool choice = 0;
 int pointer = 0;
 
+int frec = 133;
+
 // QueueHandle_t QueueHandle;
 // const int QueueElementSize = 10;
 // TaskHandle_t task_send, task_rot;
@@ -78,6 +80,8 @@ void ss(void*params){
     packet += std::to_string(frames);
     packet += " ";
     packet += std::to_string(buff_size);
+    packet += " ";
+    packet += std::to_string(freq);
     client.printf(packet.c_str());
     packet = "";
     for (int j = 0; j < 10; j++) {
@@ -185,7 +189,13 @@ void IRAM_ATTR onTimer(){
 //   }
 // }
 
-
+void setupTimer(void* params){
+  My_timer = timerBegin(0, 80, true);
+  timerAttachInterrupt(My_timer, &onTimer, true);
+  timerAlarmWrite(My_timer, 1000000/frec, true);
+  timerAlarmEnable(My_timer);
+  vTaskDelete(NULL);
+}
 
 void setup() {
   Serial.begin(115200);
@@ -207,13 +217,10 @@ void setup() {
     Serial.printf("IP: %s\n", WiFi.localIP().toString().c_str());
   }
 
-  // xTaskCreatePinnedToCore(send, "send", 10000, NULL, 1, &task_send, 1);
+  xTaskCreatePinnedToCore(setupTimer, "time", 10000, NULL, 1, NULL, 1);
   // xTaskCreatePinnedToCore(recieve, "recieve", 10000, NULL, 1, NULL, 0);
 
-  My_timer = timerBegin(0, 80, true);
-  timerAttachInterrupt(My_timer, &onTimer, true);
-  timerAlarmWrite(My_timer, 2000000/buff_size, true);
-  timerAlarmEnable(My_timer);
+
 
 }
 void loop() {
