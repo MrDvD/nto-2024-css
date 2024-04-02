@@ -40,8 +40,7 @@ class Server:
     async def on_connect(self, reader, writer):
         message = await self.get(reader)
         print(f'[{self.port}] Data has been received: {message}')
-        await self.send('Ping-pong..', writer)
-        await self.close(writer)
+        await self.close(writer) # must-have
 
 server = Server(cfg['server_ip'], cfg['server_port'])
 

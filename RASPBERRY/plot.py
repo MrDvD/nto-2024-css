@@ -65,4 +65,7 @@ ax3.plot(t, abs(Y)[1:])
 ax3.set_title("Decibels")
 ax3.set_xlabel("Frequency [Hz]")
 ax3.set_ylabel("Intensity [dB]")
+fig.set_size_inches(14, 6)
+fig.savefig('test.jpg', dpi=150)
+set_box_aspect
 plt.show()
