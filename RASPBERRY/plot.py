@@ -1,21 +1,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import math
+import math, time
 
 def beautify(num):
     return f'{round(num, 3):.3f}'
 
 def dbfft(rfft, ref):
-    # win = np.ones((L - 1,))
-    # rfft = rfft * win
-
-    # Scale the magnitude of FFT by window and factor of 2,
-    # because we are using half of FFT spectrum.
     s_mag = np.abs(rfft)
-
-    # Convert to dBFS
     s_dbfs = 20 * np.log10(s_mag/ref)
-
     return s_dbfs
 
 # def dbfft(X, ref=32768):
@@ -68,4 +60,16 @@ ax3.set_ylabel("Intensity [dB]")
 fig.set_size_inches(14, 6)
 fig.savefig('test.jpg', dpi=150)
 # set_box_aspect
-plt.show()
+while True:
+    t = np.arange(0, L - 1) * T
+    X = 256 + 128 * np.sin(2 * pi * 50 * t) + 64 * np.sin(2 * pi * 120 * t)
+    ax1.clear()
+    ax1.plot(Fs*t, X)
+    plt.pause(0.0001)
+    # plt.clf()
+    Y = 2 * np.fft.rfft(X)
+    t = np.arange(1, L/2)
+    ax1.clear()
+    ax1.plot(Fs/L*t, abs(Y)[1:] / 1000)
+    plt.pause(0.0001)
+    # plt.clf()

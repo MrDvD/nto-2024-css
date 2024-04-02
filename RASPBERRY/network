@@ -1,0 +1,19 @@
+nmcli con add type wifi ifname wlx08bfb85692f9 con−name ternary ssid "ternary_q"
+nmcli radio wifi on
+sudo nano /etc/NetworkManager/system-connections/ternary.nmconnection
+
+[connection]
+autoconnect=no
+interface-name=wlx08bfb85692f9
+[wifi]
+mode=ap
+[wifi−security]
+key−mgmt=wpa−psk
+psk=55555555
+[ipv4]
+method=shared
+[ipv6]
+method=disabled
+
+sudo service network-manager restart
+nmcli con up ternary
