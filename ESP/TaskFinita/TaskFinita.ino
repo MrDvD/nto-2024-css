@@ -9,7 +9,7 @@ const char pass[] = "11111111";
 const char *ip = "192.168.123.176";
 int port = 7001;
 
-const int buff_size = 5000;
+const int buff_size = 1000;
 int frames = 10;
 
 int buffer[buff_size];
@@ -81,7 +81,7 @@ void ss(void*params){
     client.printf(packet.c_str());
     packet = "";
     for (int j = 0; j < 10; j++) {
-      for (int i = 500*j; i < 500*(j+1) ; i++){
+      for (int i = 100*j; i < 100*(j+1) ; i++){
         // Serial.println(buffer[i]);
         // client.printf("%d ", buffer[i]);
         if (choice)
@@ -91,7 +91,7 @@ void ss(void*params){
         if (i != buff_size - 1) {
           packet += " ";
         }
-        // delay(1);
+        delay(1);
       }
       client.printf(packet.c_str());
       packet = "";
@@ -137,7 +137,7 @@ void IRAM_ATTR onTimer(){
     buffera[pointer] &= 0x0FFF;
   }
   pointer++;
-    if(pointer == 5000){
+    if(pointer == buff_size){
       pointer = 0;
       choice = !choice;
       xTaskCreatePinnedToCore(ss, "send", 10000, NULL, 1, NULL, 1);
@@ -185,6 +185,8 @@ void IRAM_ATTR onTimer(){
 //   }
 // }
 
+
+
 void setup() {
   Serial.begin(115200);
 
@@ -210,7 +212,7 @@ void setup() {
 
   My_timer = timerBegin(0, 80, true);
   timerAttachInterrupt(My_timer, &onTimer, true);
-  timerAlarmWrite(My_timer, 200, true);
+  timerAlarmWrite(My_timer, 2000000/buff_size, true);
   timerAlarmEnable(My_timer);
 
 }
