@@ -2,6 +2,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math, time
 
+def draw_text(fig, Y):
+    arr = list()
+    arr.append(fig.text(0.005, 0.15, f"MEAN: {beautify(np.mean(Y))}"))
+    arr.append(fig.text(0.005, 0.12, f"MEDIAN: {beautify(np.median(Y))}"))
+    arr.append(fig.text(0.005, 0.09, f"MAX: {beautify(np.max(Y))}"))
+    arr.append(fig.text(0.005, 0.06, f"MIN: {beautify(np.min(Y))}"))
+    arr.append(fig.text(0.005, 0.03, f"STD: {beautify(np.std(Y))}"))
+    return arr
+
+def remove_text(arr):
+    for t in arr:
+        t.set_visible(False)
+
 def beautify(num):
     return f'{round(num, 3):.3f}'
 
@@ -33,11 +46,11 @@ print('MIN:', beautify(np.min(X)))
 # plt.xlabel("f (Hz)")
 # plt.ylabel("|fft(X)|")
 
-fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
 for a in [ax1, ax2, ax3]:
     a.grid()
-    a.locator_params(axis='x', nbins=20)
-    a.locator_params(axis='y', nbins=20)
+    a.locator_params(axis='x', nbins=30)
+    a.locator_params(axis='y', nbins=10)
 
 ax1.plot(Fs*t, X)
 ax1.set_title("Signal")
@@ -57,19 +70,25 @@ ax3.plot(t, Y[1:])
 ax3.set_title("Decibels")
 ax3.set_xlabel("Frequency [Hz]")
 ax3.set_ylabel("Intensity [dB]")
-fig.set_size_inches(14, 6)
+fig.set_size_inches(14, 8)
 fig.savefig('test.jpg', dpi=150)
 # set_box_aspect
+arr = list()
 while True:
     t = np.arange(0, L - 1) * T
     X = 256 + 128 * np.sin(2 * pi * 50 * t) + 64 * np.sin(2 * pi * 120 * t)
+    remove_text(arr)
     ax1.clear()
+    arr = draw_text(fig, X)
     ax1.plot(Fs*t, X)
     plt.pause(0.0001)
+    # plt.figtext(0.02, 0.05, "typeeeee")
     # plt.clf()
     Y = 2 * np.fft.rfft(X)
     t = np.arange(1, L/2)
+    remove_text(arr)
     ax1.clear()
+    arr = draw_text(fig, Y)
     ax1.plot(Fs/L*t, abs(Y)[1:] / 1000)
     plt.pause(0.0001)
     # plt.clf()
