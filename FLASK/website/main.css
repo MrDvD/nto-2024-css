@@ -1,0 +1,91 @@
+html, body {
+  height: 100%;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  font-size: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+@font-face {
+  font-family: Gilroy;
+  src: url("fonts/Gilroy-Regular.otf");
+}
+@font-face {
+  font-family: Gilroy;
+  src: url("fonts/Gilroy-MediumItalic.otf");
+  font-style: italic;
+}
+@font-face {
+  font-family: Century;
+  src: url("fonts/CenturySchoolbook-Roman.otf");
+}
+@font-face {
+  font-family: Century;
+  src: url("fonts/CenturySchoolbook-Italic.otf");
+  font-style: italic;
+}
+@font-face {
+  font-family: Century;
+  src: url("fonts/CenturySchoolbook-Bold.otf");
+  font-weight: bold;
+}
+@font-face {
+  font-family: Century;
+  src: url("fonts/CenturySchoolbook-BoldItalic.otf");
+  font-style: italic;
+  font-weight: bold;
+}
+
+b {
+    font-family: Century;
+    font-weight: bold;
+}
+
+#heading {
+    position: relative;
+    transform: translateY(-10px);
+    font-size: clamp(1.8rem, 4.5vw, 5.5rem);
+    white-space: nowrap;
+}
+
+#heading:after {
+    content: "«Sound Analyzer»";
+    font-family: Gilroy;
+    font-style: italic;
+}
+
+#box {
+    display: flex;
+    align-items: center;
+    position: relative;
+    justify-content: center;
+    width: 80%;
+    height: 70%;
+    background-color: #f2f2f4;
+    border-radius: 40px;
+    gap: min(15px, 1%);
+}
+
+.button {
+    width: min(200px, max(50%, 130px));
+    height: min(50px, 25%);
+    background-color: #ccc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: clamp(1.8em, 4vh, 2rem);
+    font-family: Century;
+    border-radius: 6px;
+}
+
+.button:hover {
+    background-color: #bbb;
+    cursor: pointer;
+}
+
+@media only screen and (max-width: 500px) {
+}

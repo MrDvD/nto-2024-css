@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Sound Analyzer</title>
+  <link rel="stylesheet" href="result.css" />
+   <script src="result.js"></script>
+</head>
+<body>
+    <div id="heading"></div>
+    <div id="box">
+        <div id="wav">
+            <img src="media/wav.jpg">
+        </div>
+        <div id="mics">
+            <div class="scan">
+                <h>Mic #1</h>
+                <div class="info"><b>MEAN:</b> {{ context['0'].mean }}</div>
+                <div class="info"><b>MEDIAN:</b> {{ context['0'].median }}</div>
+                <div class="info"><b>MAX:</b> {{ context['0'].mx }}</div>
+                <div class="info"><b>MIN:</b> {{ context['0'].mn }}</div>
+                <div class="info"><b>STD:</b> {{ context['0'].std }}</div>
+            </div>
+            <div class="scan">
+                <h>Mic #2</h>
+                <div class="info"><b>MEAN:</b> {{ context['1'].mean }}</div>
+                <div class="info"><b>MEDIAN:</b> {{ context['1'].median }}</div>
+                <div class="info"><b>MAX:</b> {{ context['1'].mx }}</div>
+                <div class="info"><b>MIN:</b> {{ context['1'].mn }}</div>
+                <div class="info"><b>STD:</b> {{ context['1'].std }}</div>
+            </div>
+        </div>
+        <div id="back_button">
+            <img src="media/back.svg">
+        </div>
+    </div>
+</body>
+</html>

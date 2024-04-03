@@ -1,0 +1,5 @@
+---
+server_ip: 192.168.43.102
+server_port: 7001
+back_port: 7005
+web_port: 80
