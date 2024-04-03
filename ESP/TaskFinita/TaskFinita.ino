@@ -18,7 +18,7 @@ int buffer[buff_size];
 int buffera[buff_size];
 bool choice = 0;
 int pointer = 0;
-
+int i1=0,i2=0;
 int freq = 133;
 
 // QueueHandle_t QueueHandle;
@@ -86,15 +86,13 @@ void ss(void*params){
     packet += std::to_string(freq);
     client.printf(packet.c_str());
     packet = "";
-    for (int j = 0; j < 10; j++) {
-      for (int i = 100*j; i < 100*(j+1) ; i++){
+    for (int j = 0; j < 30; j++) {
+      for (int i = 1000*j; i < 1000*(j+1) ; i++){
         // Serial.println(buffer[i]);
         // client.printf("%d ", buffer[i]);
-        if (choice)
-          packet += std::to_string(buffer[i]);
-        else
-          packet += std::to_string(buffera[i]);
-        if (i != buff_size - 1) {
+
+        packet += std::to_string(boba[j][i]);
+        if (i != 29999) {
           packet += " ";
         }
         delay(1);
@@ -134,22 +132,26 @@ void ss(void*params){
 
 void IRAM_ATTR onTimer(){
   // message_t message;
-  if (!choice){
-    buffer[pointer] = analogRead(34);
-    buffer[pointer] &= 0x0FFF;
-  }
-  else{
-    buffera[pointer] = analogRead(34);
-    buffera[pointer] &= 0x0FFF;
-  }
-  pointer++;
-    if(pointer == buff_size){
-      pointer = 0;
-      choice = !choice;
-      xTaskCreatePinnedToCore(ss, "send", 10000, NULL, 1, NULL, 1);
-      // int ret = xQueueSend(QueueHandle, (void*) &message, 0);
-
+    boba[i1][i2] = analogRead(34);
+    boba[i1][i2] &= 0x0FFF;
+    i2++;
+    if (i2 == 1000){
+      i1++;
+      i2 = 0;
     }
+    if (i1==30){
+      xTaskCreatePinnedToCore(ss, "send", 10000, NULL, 1, NULL, 1);
+    }
+
+
+  // pointer++;
+  //   if(pointer == buff_size){
+  //     pointer = 0;
+  //     choice = !choice;
+  //     xTaskCreatePinnedToCore(ss, "send", 10000, NULL, 1, NULL, 1);
+  //     // int ret = xQueueSend(QueueHandle, (void*) &message, 0);
+
+  //   }
   // if (pointer == 7999){
   //   pointer = 0;
   //   xTaskCreate(sendTask, "send", 10000, (void*) &buffer, 1, &task_rot);
