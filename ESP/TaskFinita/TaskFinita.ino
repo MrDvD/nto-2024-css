@@ -12,12 +12,14 @@ int port = 7001;
 const int buff_size = 1000;
 int frames = 10;
 
+int boba[30][1000];
+
 int buffer[buff_size];
 int buffera[buff_size];
 bool choice = 0;
 int pointer = 0;
 
-int frec = 133;
+int freq = 133;
 
 // QueueHandle_t QueueHandle;
 // const int QueueElementSize = 10;
