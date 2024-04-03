@@ -3,6 +3,7 @@
 #include <iostream>
 
 // #define MAX_LINE_LENGTH (64)
+#define FORMAT_LITTLEFS_IF_FAILED true
 
 const char ssid[] = "Redmi Note 10S";
 const char pass[] = "11111111";
@@ -14,61 +15,72 @@ int frames = 10;
 
 int boba[30][1000];
 
+int ind=0;
+
 int buffer[buff_size];
 int buffera[buff_size];
 bool choice = 0;
 int pointer = 0;
 
 int freq = 133;
+int k =0;
 
-// QueueHandle_t QueueHandle;
-// const int QueueElementSize = 10;
 // TaskHandle_t task_send, task_rot;
 hw_timer_t *My_timer = NULL;
 
 int packet1_num = 0;
 
-// typedef struct{
-//   int data;
-// } message_t;
 
-// struct soundhdr {
-//   char  riff[4];        /* "RIFF"                                  */
-//   long  flength;        /* file length in bytes                    */
-//   char  wave[4];        /* "WAVE"                                  */
-//   char  fmt[4];         /* "fmt "                                  */
-//   long  chunk_size;     /* size of FMT chunk in bytes (usually 16) */
-//   short format_tag;     /* 1=PCM, 257=Mu-Law, 258=A-Law, 259=ADPCM */
-//   short num_chans;      /* 1=mono, 2=stereo                        */
-//   long  srate;          /* Sampling rate in samples per second     */
-//   long  bytes_per_sec;  /* bytes per second = srate*bytes_per_samp */
-//   short bytes_per_samp; /* 2=16-bit mono, 4=16-bit stereo          */
-//   short bits_per_samp;  /* Number of bits per sample               */
-//   char  data[4];        /* "data"                                  */
-//   long  dlength;        /* data length in bytes (filelength - 44)  */
-// } wavh;
 
 WiFiServer server(80);
 
-// void appender(void*params){
-//   while(1){
-//     if(QueueHandle != NULL){
-//       int ret = xQueueReceive(QueueHandle, &message, portMAX_DELAY);
-//       if(ret == pdPASS){
-//           // The message was successfully received - send it back to Serial port and "Echo: "
-//           buffer[pointer++] = message.data;
-//           if (pointer == 7999){
-//             pointer = 0;
-//           }
-//           Serial.printf("Echo line of size %d: \"%s\"\n", message.line_length, message.line);
-//           // The item is queued by copy, not by reference, so lets free the buffer after use.
-//         }else if(ret == pdFALSE){
-//           Serial.println("The `TaskWriteToSerial` was unable to receive data from the Queue");
-//         }
-      
+
+// void appendFile(fs::FS &fs, const char * path, const char * message){
+//     Serial.printf("Appending to file: %s\r\n", path);
+
+//     File file = fs.open(path, FILE_APPEND);
+//     if(!file){
+//         Serial.println("- failed to open file for appending");
+//         return;
+//     }
+//     if(file.print(message)){
+//         Serial.println("- message appended");
+//     } else {
+//         Serial.println("- append failed");
+//     }
+//     file.close();
+// }
+
+// void readFile(fs::FS &fs, const char * path){
+//     Serial.printf("Reading file: %s\r\n", path);
+
+//     File file = fs.open(path);
+//     if(!file || file.isDirectory()){
+//         Serial.println("- failed to open file for reading");
+//         return;
 //     }
 
-//   }
+//     Serial.println("- read from file:");
+//     while(file.available()){
+//         Serial.write(file.read());
+//     }
+//     file.close();
+// }
+
+// void writeFile(fs::FS &fs, const char * path, const char * message){
+//     Serial.printf("Writing file: %s\r\n", path);
+
+//     File file = fs.open(path, FILE_WRITE);
+//     if(!file){
+//         Serial.println("- failed to open file for writing");
+//         return;
+//     }
+//     if(file.print(message)){
+//         Serial.println("- file written");
+//     } else {
+//         Serial.println("- write failed");
+//     }
+//     file.close();
 // }
 
 void ss(void*params){
@@ -100,6 +112,12 @@ void ss(void*params){
         delay(1);
       }
       client.printf(packet.c_str());
+      // if (k==0){
+      //   k+=1;
+      //   writeFile(LittleFS, "/data.txt", packet.c_str());
+      // }else{
+      //   appendFile(LittleFS, "/data.txt", packet.c_str());
+      // }
       packet = "";
     }
     // Serial.println(packet.c_str());
@@ -118,19 +136,8 @@ void ss(void*params){
   vTaskDelete(NULL);
 }
 
-// void sendTask(void*params){
-//     // int buffe = *((int*)params);
-//     message_t message;
-    
-//     packet1_num++;
-//     if(QueueHandle != NULL && uxQueueSpacesAvailable(QueueHandle) > 0){
-//       for (int i = 0; i < buff_size; i++){
-//         message.data[i] = buffer[i];
-//       }
-//       int ret = xQueueSend(QueueHandle, (void*) &message, 0);
-//     }
-//     vTaskDelete(NULL);
-// }
+
+
 
 void IRAM_ATTR onTimer(){
   // message_t message;
@@ -142,6 +149,7 @@ void IRAM_ATTR onTimer(){
     buffera[pointer] = analogRead(34);
     buffera[pointer] &= 0x0FFF;
   }
+  ind++;
   pointer++;
     if(pointer == buff_size){
       pointer = 0;
@@ -150,6 +158,9 @@ void IRAM_ATTR onTimer(){
       // int ret = xQueueSend(QueueHandle, (void*) &message, 0);
 
     }
+  if (ind==30000){
+    timerDetachInterrupt(My_timer);
+  }
   // if (pointer == 7999){
   //   pointer = 0;
   //   xTaskCreate(sendTask, "send", 10000, (void*) &buffer, 1, &task_rot);
@@ -161,40 +172,11 @@ void IRAM_ATTR onTimer(){
   // }
 }
 
-// void send(void* params){
-//   message_t message;
-//   while(1){
-//     if(QueueHandle != NULL){
-//       int ret = xQueueReceive(QueueHandle, &message, portMAX_DELAY);
-//       if(ret == pdPASS){
-//         WiFiClient client;
-//         client.connect(ip, port);
-//         if (client.connected()){
-//           client.printf("WAV %d:", packet1_num);
-//           for (int i = 0; i < buff_size; i++){
-//             client.printf("%d ", message.data[i]);
-//           }
-//           // String response = client.readString();
-//           // if (response == "") {
-//           //   return;
-//           // }
-//           // Serial.printf("Server response: %s\n", response.c_str());
-//           client.stop();
-//           Serial.println("Disconnected");
-//         }else
-//           Serial.println("Not able to connect");
-//       }else if(ret == pdFALSE){
-//         Serial.println("The `TaskWriteToSerial` was unable to receive data from the Queue");
-//       }
-//     }
-//     delay(100);
-//   }
-// }
 
 void setupTimer(void* params){
   My_timer = timerBegin(0, 80, true);
   timerAttachInterrupt(My_timer, &onTimer, true);
-  timerAlarmWrite(My_timer, 1000000/frec, true);
+  timerAlarmWrite(My_timer, 1000, true);
   timerAlarmEnable(My_timer);
   vTaskDelete(NULL);
 }
@@ -218,6 +200,10 @@ void setup() {
     Serial.println("[WIFI_SUCCESS]");
     Serial.printf("IP: %s\n", WiFi.localIP().toString().c_str());
   }
+
+  // if(!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)){
+  //       Serial.println("LittleFS Mount Failed");
+  //   }
 
   xTaskCreatePinnedToCore(setupTimer, "time", 10000, NULL, 1, NULL, 1);
   // xTaskCreatePinnedToCore(recieve, "recieve", 10000, NULL, 1, NULL, 0);
