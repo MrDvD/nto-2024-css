@@ -45,6 +45,7 @@ def poll():
         sock.sendall('POL'.encode())
         if sock.recv(100).decode() == 'POL':
             return 'POL'
+    return 'ERR'
 
 @app.route('/rec')
 def rec():

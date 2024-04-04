@@ -93,7 +93,7 @@ class Server:
             print(f'Listening on [{self.port}]')
             await server.serve_forever()
     
-    async def get(self, reader, size=15000):
+    async def get(self, reader, size=8000):
         data = await reader.read(size)
         return data.decode()
     
@@ -129,6 +129,17 @@ class Server:
         with open('../database.json', 'w') as f:
             json.dump(db, f)
     
+    def result(self, mic, freq):
+        with open(f'mic{mic}.data') as f:
+            data = f.read()
+        data = list(map(lambda x: abs(4095 - int(x)), data.split()))
+        self.plot.plot_graphs(mic, data, freq, 'signal')
+        self.plot.plot_graphs(mic, data, freq, 'rfft')
+        self.update_db(mic, data)
+        self.plot.export_figs()
+        if not self.poll.done():
+            self.poll.set_result('POL')
+    
     def append_wav(self, mic, count, idx, freq, packet):
         curr = ''
         if idx > 1:
@@ -137,16 +148,7 @@ class Server:
         with open(f'mic{mic}.data', 'w') as f:
             f.write(curr + packet)
         if idx == count:
-            with open(f'mic{mic}.data') as f:
-                data = f.read()
-            data = list(map(lambda x: abs(4095 - int(x)), data.split()))
-            self.plot.plot_graphs(mic, data, freq, 'signal')
-            self.plot.plot_graphs(mic, data, freq, 'rfft')
-            self.update_db(mic, data)
-            self.plot.export_figs()
-            if not self.poll.done():
-                self.poll.set_result('POL')
-            # plt.pause(0.00001)
+            self.result(mic, freq)
 
     async def on_connect(self, reader, writer):
         message = await self.get(reader)
@@ -172,23 +174,29 @@ class Server:
             #     packet += await self.get(reader)
             # packet = list(map(lambda x: abs(4095 - int(x)), packet.split()))
             while True:
-                message = await self.get(reader)
-                if message == '':
-                    continue
-                print(message)
-                if message[-1] != 'S':
-                    print('MSG:', message[:50] + 'end')
-                    if 'S' in message:
-                        header, packet = message[:50].split('S')
-                        mic, count, idx, freq = map(int, header[4:].split())
-                    else:
+                try:
+                    message = await self.get(reader)
+                    if message == '':
+                        continue
+                    print('INIT', message[:50])
+                    if message[0:3] != 'WAV':
+                        #if 'S' in message:
+                        #    header, packet = message[:50].split('S')
+                        #    mic, count, idx, freq = map(int, header[4:].split())
+                        #else:
                         packet = message
-                else:
-                    message = message[:-1]
-                    mic, count, idx, freq = map(int, message[4:].split())
-                    packet = await self.get(reader)
-                self.append_wav(mic, count, idx, freq, packet)
-                if idx == count:
+                    else:
+                        message = message[:-1]
+                        mic, count, idx, freq = map(int, message[4:].split())
+                        packet = await self.get(reader)
+                    self.append_wav(mic, count, idx, freq, packet)
+                    print(idx, count)
+                    if idx == count:
+                        print('RESULT')
+                        self.result(mic, freq)
+                        break
+                except:
+                    self.result(mic, freq)
                     break
         elif message == 'POL':
             await self.send(await self.poll, writer)
