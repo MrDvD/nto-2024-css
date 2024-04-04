@@ -2,6 +2,8 @@
 #include <WiFiClient.h>
 #include "EEPROM.h"
 
+//https://roboticsbackend.com/arduino-store-array-into-eeprom/
+
 // #define MAX_LINE_LENGTH (64)
 // #define FORMAT_LITTLEFS_IF_FAILED true
 
