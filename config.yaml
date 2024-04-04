@@ -1,7 +1,7 @@
 ---
-server_ip: 192.168.43.130
-mic0_ip: 192.168.43.129
-mic1_ip: 192.168.43.76
+server_ip: 10.42.0.1
+mic0_ip: 10.42.0.225
+mic1_ip: 10.42.0.110
 server_port: 7001
 back_port: 7020
 web_port: 7010
