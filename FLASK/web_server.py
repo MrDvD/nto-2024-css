@@ -46,4 +46,11 @@ def poll():
         if sock.recv(100).decode() == 'POL':
             return 'POL'
 
+@app.route('/rec')
+def rec():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.connect((cfg['server_ip'], cfg['server_port']))
+        sock.sendall('REC'.encode())
+    return ''
+
 app.run(host=cfg['server_ip'], port=cfg['web_port'])

@@ -1,5 +1,4 @@
-import asyncio, yaml, json
-import scipy.io.wavfile as wf
+import asyncio, yaml, json, socket
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -46,7 +45,7 @@ class Plot:
         if mode == 'signal':
             # self.remove_text(self.texts)
             # self.texts = self.draw_text(self.fig, Y)
-            t = np.linspace(0, self.secs, self.secs * freq)
+            t = np.linspace(0, self.secs, len(Y))
             if mic:
                 self.ax3.clear()
                 self.ax3.plot(t, Y)
@@ -57,7 +56,7 @@ class Plot:
                 self.ax1.grid()
         elif mode == 'rfft':
             Y = 2 * np.fft.rfft(Y)
-            t = np.linspace(0, self.secs, self.secs * freq // 2)
+            t = np.linspace(0, self.secs, len(Y) - 1)
             if mic:
                 self.ax4.clear()
                 self.ax4.plot(t, abs(Y)[1:])
@@ -183,13 +182,14 @@ class Server:
                 self.append_wav(mic, count, idx, freq, packet)
                 if idx == count:
                     break
-                # packet = np.array(packet, dtype=np.int16)
-                # wf.write('curr_sample.wav', freq, packet)
         elif message == 'POL':
             await self.send(await self.poll, writer)
             self.poll = asyncio.Future()
         elif message == 'REC':
-            await self.send('REC', writer)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((cfg['mic0_ip'], cfg['back_port']))
+                sock.sendall('REC'.encode())
+            print('rec_sent')
         print('close')
         await self.close(writer)
 

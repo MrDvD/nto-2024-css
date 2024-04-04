@@ -1,6 +1,5 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
-#include <iostream>
 
 // #define MAX_LINE_LENGTH (64)
 #define FORMAT_LITTLEFS_IF_FAILED true
@@ -85,13 +84,19 @@ void listen_for_rec(void *params) {
   while (true) {
     WiFiClient cl = server.available();
     if (cl) {
-      Serial.println("connection success");
       while (cl.connected()) {
+        Serial.print("&");
         if (cl.available()) {
           String cmd = cl.readString();
           Serial.printf("CMD: %s\n", cmd.c_str());
           if (cmd == "REC") {
-            Serial.println("Must start rec");
+            client.connect(ip, port);
+            while (!client.connected()){
+              Serial.print(".");
+              delay(100);
+              client.connect(ip, port);
+            }
+            xTaskCreatePinnedToCore(setupTimer, "time", 10000, NULL, 1, NULL, 1);
           }
         }
         delay(10);
@@ -101,13 +106,13 @@ void listen_for_rec(void *params) {
   }
 }
 
-void ss(void*params){
+void send(void*params){
 
   if (client.connected()){
     delay(75);
     std::string packet = "WAV ";
     // client.printf(packet.c_str());
-    packet +="0 30 ";
+    packet += "0 30 ";
     packet += std::to_string(packet1_num);
     packet += " 1000S";
     client.printf(packet.c_str());
@@ -146,8 +151,9 @@ void ss(void*params){
     Serial.println(packet1_num);
     }else
       Serial.print("#");
-      // client.connect(ip, port);
+      client.connect(ip, port);
     if (packet1_num==31){
+      packet1_num = 0;
       client.stop();
       Serial.println("Disconnected");
     }
@@ -173,31 +179,22 @@ void IRAM_ATTR onTimer(){
     if (pointer == buff_size) {
       pointer = 0;
       choice = !choice;
-      xTaskCreatePinnedToCore(ss, "send", 10000, NULL, 1, NULL, 1);
-      // int ret = xQueueSend(QueueHandle, (void*) &message, 0);
-
+      xTaskCreatePinnedToCore(send, "send", 10000, NULL, 1, NULL, 1);
     }
-  if (ind>30000){
-    
+  if (ind > 30000){
     timerDetachInterrupt(My_timer);
   }
-  // if (pointer == 7999){
-  //   pointer = 0;
-  //   xTaskCreate(sendTask, "send", 10000, (void*) &buffer, 1, &task_rot);
-  // }
-  
-  // if(QueueHandle != NULL && uxQueueSpacesAvailable(QueueHandle) > 0){
-  //   message.number = counter;
-  //   int ret = xQueueSend(QueueHandle, (void*) &message, 0);
-  // }
 }
 
 
 void setupTimer(void* params){
+  Serial.println("Timer config");
+  ind = 0, pointer = 0, packet1_num = 1;
   My_timer = timerBegin(0, 80, true);
   timerAttachInterrupt(My_timer, &onTimer, true);
   timerAlarmWrite(My_timer, 1000, true);
   timerAlarmEnable(My_timer);
+  Serial.println("Timer cfg_end");
   vTaskDelete(NULL);
 }
 
@@ -222,18 +219,18 @@ void setup() {
   }
   
   server.begin();
-  client.connect(ip, port);
-  while (!client.connected()){
-    Serial.print(".");
-    delay(100);
-    // client.connect(ip, port);
-  }
+//  client.connect(ip, port);
+//  while (!client.connected()){
+//    Serial.print(".");
+//    delay(100);
+//    client.connect(ip, port);
+//  }
 
   // if(!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)){
   //       Serial.println("LittleFS Mount Failed");
   //   }
 
-  xTaskCreatePinnedToCore(setupTimer, "time", 10000, NULL, 1, NULL, 1);
+//  xTaskCreatePinnedToCore(setupTimer, "time", 10000, NULL, 1, NULL, 1);
   xTaskCreatePinnedToCore(listen_for_rec, "listen_rec", 10000, NULL, 1, &handler_rec, 1);
   // xTaskCreatePinnedToCore(recieve, "recieve", 10000, NULL, 1, NULL, 0);
 }
