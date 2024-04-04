@@ -33,13 +33,13 @@ def fonts(font):
     return flask.send_file(f'website/fonts/{font}')
 
 @app.route('/record')
-def update():
+def record():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.connect((cfg['server_ip'], cfg['server_port']))
         sock.sendall('REC'.encode())
 
 @app.route('/poll')
-def update():
+def poll():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.connect((cfg['server_ip'], cfg['server_port']))
         sock.sendall('POL'.encode())
