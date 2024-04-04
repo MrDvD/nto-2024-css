@@ -223,6 +223,7 @@ void listen_for_rec(void *params) {
 //              delay(100);
 //              client.connect(ip, port);
 //            }
+            frees = false;
             xTaskCreatePinnedToCore(setupTimer, "time", 10000, NULL, 1, NULL, 1);
           }
         }

@@ -1,4 +1,4 @@
-import asyncio, yaml, json, socket
+import asyncio, yaml, json, socket, re
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -15,12 +15,12 @@ class Plot:
         for a in [self.ax1, self.ax2, self.ax3, self.ax4]:
             a.locator_params(axis='x', nbins=20)
             a.locator_params(axis='y', nbins=20)
-        self.ax1.set_title("Signal")
-        self.ax1.set_xlabel("Time [ms]")
-        self.ax1.set_ylabel("Quants")
-        self.ax2.set_title("Amplitude Spectrum")
-        self.ax2.set_xlabel("Frequency [Hz]")
-        self.ax2.set_ylabel("Amplitude, 10^3")
+        # self.ax1.set_title("Signal")
+        # self.ax1.set_xlabel("Time [ms]")
+        # self.ax1.set_ylabel("Quants")
+        # self.ax2.set_title("Amplitude Spectrum")
+        # self.ax2.set_xlabel("Frequency [Hz]")
+        # self.ax2.set_ylabel("Amplitude, 10^3")
         self.texts = list()
         self.secs = 30
     
@@ -41,7 +41,7 @@ class Plot:
         for t in arr:
             t.set_visible(False)
 
-    def plot_graphs(self, mic, Y, freq, mode):
+    def plot_graphs(self, mic, freq, Y, mode):
         if mode == 'signal':
             # self.remove_text(self.texts)
             # self.texts = self.draw_text(self.fig, Y)
@@ -54,17 +54,19 @@ class Plot:
                 self.ax1.clear()
                 self.ax1.plot(t, Y)
                 self.ax1.grid()
+            self.fig.savefig('../FLASK/website/media/mic1.jpg', dpi=150)
         elif mode == 'rfft':
             Y = 2 * np.fft.rfft(Y)
-            t = np.linspace(0, self.secs, len(Y) - 1)
+            t = np.arange(1, len(Y)) * freq / len(Y)
             if mic:
                 self.ax4.clear()
-                self.ax4.plot(t, abs(Y)[1:])
+                self.ax4.plot(t, abs(Y)[1:] / 1000)
                 self.ax4.grid()
             else:
                 self.ax2.clear()
-                self.ax2.plot(t, abs(Y)[1:])
+                self.ax2.plot(t, abs(Y)[1:] / 1000)
                 self.ax2.grid()
+            self.fig.savefig('../FLASK/website/media/mic2.jpg', dpi=150)
     
     def export_figs(self):
         self.fig.savefig('../FLASK/website/media/wav.jpg', dpi=150)
@@ -115,6 +117,10 @@ class Server:
             db[i]['std'] = '???'
         with open('../database.json', 'w') as f:
             json.dump(db, f)
+        with open('mic0.data', 'w') as f:
+            f.write('')
+        with open('mic1.data', 'w') as f:
+            f.write('')
     
     def update_db(self, idx, Y):
         idx = str(idx)
@@ -129,75 +135,44 @@ class Server:
         with open('../database.json', 'w') as f:
             json.dump(db, f)
     
-    def result(self, mic, freq):
-        with open(f'mic{mic}.data') as f:
-            data = f.read()
-        data = list(map(lambda x: abs(4095 - int(x)), data.split()))
-        self.plot.plot_graphs(mic, data, freq, 'signal')
-        self.plot.plot_graphs(mic, data, freq, 'rfft')
-        self.update_db(mic, data)
+    def result(self, freq):
+        for mic in [0, 1]:
+            with open(f'mic{mic}.data') as f:
+                data = f.read()
+            data = list(map(lambda x: abs(4095 - int(x)), data.split()))
+            print(data, 'data')
+            if data:
+                self.plot.plot_graphs(mic, freq, data, 'signal')
+                self.plot.plot_graphs(mic, freq, data, 'rfft')
+                self.update_db(mic, data)
         self.plot.export_figs()
         if not self.poll.done():
             self.poll.set_result('POL')
     
-    def append_wav(self, mic, count, idx, freq, packet):
-        curr = ''
-        if idx > 1:
-            with open(f'mic{mic}.data') as f:
-                curr = f.read()
-        with open(f'mic{mic}.data', 'w') as f:
-            f.write(curr + packet)
-        if idx == count:
-            self.result(mic, freq)
-
+    def append_wav(self, mic, packet):
+        packet = re.sub(r'WAV.*S', '', packet)
+        with open(f'mic{mic}.data', 'a') as f:
+            f.write(packet)
+    
     async def on_connect(self, reader, writer):
         message = await self.get(reader)
-        print(message, 'ENDING')
         if 'WAV' in message:
-            # message = await self.get(reader)
-            # header, other = message.split('\n')
-            if message[-1] != 'S':
-                print('MSG:', message[:50])
-                if 'S' in message:
-                    header, packet = message[:50].split('S')
-                    mic, count, idx, freq = map(int, header[4:].split())
-                else:
-                    packet = message
-            else:
-                message = message[:-1]
-                mic, count, idx, freq = map(int, message[4:].split())
-                packet = await self.get(reader)
-            self.append_wav(mic, count, idx, freq, packet)
-            # mic, count, buff_size, freq = map(int, header.split())
-            # packet = other
-            # for _ in range(count):
-            #     packet += await self.get(reader)
-            # packet = list(map(lambda x: abs(4095 - int(x)), packet.split()))
-            while True:
-                try:
-                    message = await self.get(reader)
-                    if message == '':
-                        continue
-                    print('INIT', message[:50])
-                    if message[0:3] != 'WAV':
-                        #if 'S' in message:
-                        #    header, packet = message[:50].split('S')
-                        #    mic, count, idx, freq = map(int, header[4:].split())
-                        #else:
-                        packet = message
-                    else:
-                        message = message[:-1]
-                        mic, count, idx, freq = map(int, message[4:].split())
-                        packet = await self.get(reader)
-                    self.append_wav(mic, count, idx, freq, packet)
-                    print(idx, count)
-                    if idx == count:
-                        print('RESULT')
-                        self.result(mic, freq)
+            try:
+                print('CMD:', message)
+                cmd, mic = message.split()
+                packet = ''
+                while True:
+                    msg = await self.get(reader)
+                    print('MSG:', len(msg))
+                    packet += msg
+                    if packet[-1] == 'S':
+                        packet = packet[:-1]
                         break
-                except:
-                    self.result(mic, freq)
-                    break
+                with open(f'mic{mic}.data', 'a') as f:
+                    f.write(packet)
+            except Exception as e:
+                print(e)
+            self.result(1000)
         elif message == 'POL':
             await self.send(await self.poll, writer)
             self.poll = asyncio.Future()
@@ -205,11 +180,75 @@ class Server:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((cfg['mic0_ip'], cfg['back_port']))
                 sock.sendall('REC'.encode())
+            # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            #     sock.connect((cfg['mic1_ip'], cfg['back_port']))
+            #     sock.sendall('REC'.encode())
             print('rec_sent')
         print('close')
         await self.close(writer)
 
+    # async def on_connect(self, reader, writer):
+    #     message = await self.get(reader)
+    #     print(message, '|')
+    #     freq = 1000 # for safety
+    #     # res = re.search(r'WAV.*S', message)
+    #     if 'WAV' in message:
+    #         if message[0:3] != 'WAV':
+    #             packet = message
+    #         else:
+    #             if message[-1] == 'S':
+    #                 mic, count, idx, freq = map(int, message[4:-1].split())
+    #                 packet = await self.get(reader)
+    #             else:
+    #                 header, packet = message.split('S')
+    #                 mic, count, idx, freq = map(int, header[4:].split())
+    #         self.append_wav(mic, packet)
+    #         while True:
+    #             try:
+    #                 message = await self.get(reader)
+    #                 print('MSG:', message[:50])
+    #                 if message[0:3] != 'WAV':
+    #                     packet = message
+    #                 else:
+    #                     if message[-1] == 'S':
+    #                         mic, count, idx, freq = map(int, message[4:-1].split())
+    #                         packet = await self.get(reader)
+    #                     else:
+    #                         header, packet = message.split('S')
+                            
+    #                         mic, count, idx, freq = map(int, header[4:].split())
+    #                 self.append_wav(mic, packet)
+    #                 print(idx, count)
+    #                 if idx == count:
+    #                     print('RESULT')
+    #                     self.result(freq)
+    #                     break
+    #             except:
+    #                 print('EXCEPT_RESULT')
+    #                 self.result(freq)
+    #                 break
+    #     elif message == 'POL':
+    #         await self.send(await self.poll, writer)
+    #         self.poll = asyncio.Future()
+    #     elif message == 'REC':
+    #         # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+    #         #     sock.connect((cfg['mic0_ip'], cfg['back_port']))
+    #         #     sock.sendall('REC'.encode())
+    #         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+    #             sock.connect((cfg['mic1_ip'], cfg['back_port']))
+    #             sock.sendall('REC'.encode())
+    #         print('rec_sent')
+    #     print('close')
+    #     await self.close(writer)
+
 server = Server(cfg['server_ip'], cfg['server_port'])
+
+# with open('mic0.data') as f:
+#     data = f.read()
+#     data = list(map(lambda x: 4095 - int(x), data.split()))
+#     server.plot.plot_graphs(0, 1000, data, 'signal')
+#     server.plot.plot_graphs(0, 1000, data, 'rfft')
+#     server.plot.export_figs()
 
 obj = Activator(server)
 obj.elevate()
