@@ -6,7 +6,7 @@
 
 const char ssid[] = "ternary_q";
 const char pass[] = "55555555";
-const char *ip = "192.168.43.102";
+const char *ip = "10.42.0.1";
 int port = 7001;
 
 const int buff_size = 1000;
@@ -91,11 +91,11 @@ void listen_for_rec(void *params) {
           Serial.printf("CMD: %s\n", cmd.c_str());
           if (cmd == "REC") {
             client.connect(ip, port);
-            while (!client.connected()){
-              Serial.print(".");
-              delay(100);
-              client.connect(ip, port);
-            }
+//            while (!client.connected()){
+//              Serial.print(".");
+//              delay(100);
+//              client.connect(ip, port);
+//            }
             xTaskCreatePinnedToCore(setupTimer, "time", 10000, NULL, 1, NULL, 1);
           }
         }
@@ -112,7 +112,7 @@ void send(void*params){
     delay(75);
     std::string packet = "WAV ";
     // client.printf(packet.c_str());
-    packet += "1 30 ";
+    packet += "0 30 ";
     packet += std::to_string(packet1_num);
     packet += " 1000S";
     client.printf(packet.c_str());
@@ -151,7 +151,7 @@ void send(void*params){
     Serial.println(packet1_num);
     }else
       Serial.print("#");
-      client.connect(ip, port);
+//      client.connect(ip, port);
     if (packet1_num==31){
       packet1_num = 0;
       client.stop();
@@ -200,6 +200,7 @@ void setupTimer(void* params){
 
 void setup() {
   Serial.begin(115200);
+  delay(1000);
 
   // QueueHandle = xQueueCreate(QueueElementSize, sizeof(message_t));
   // if(QueueHandle == NULL){
