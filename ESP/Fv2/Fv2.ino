@@ -127,19 +127,25 @@ void send(void*params){
     delay(75);
     // Serial.println(packet.c_str());
     packet = "";
-    for (int i = 0; i<30; i++){
-      int buffera[buff_size];
-      readIntArrayFromEEPROM(address, buffera, buff_size);
-      // EEPROM.get(address, buffera);
-      // address += sizeof(buffer);
+    // for (int i = 0; i<30; i++){
+      
+    //   int buffera[buff_size];
+    //   readIntArrayFromEEPROM(address, buffera, buff_size);
+    //   // EEPROM.get(address, buffera);
+    //   // address += sizeof(buffer);
       address += sizeof(int[buff_size]);
 
       for (int j = 0; j < 1000; j++) {
+        int val;
+        if (choice){
+          val = byte(EEPROM.read(j+1000));
+        }else
+          val = byte(EEPROM.read(j));
           // Serial.println(buffer[i]);
           // client.printf("%d ", buffer[i]);
           // int val;
           // EEPROM.get(address, val);
-          packet += std::to_string(buffera[i]);
+          packet += std::to_string(val);
           
           packet += " ";
 
@@ -154,7 +160,6 @@ void send(void*params){
         // }
         packet = "";
         delay(100);
-    }
     // Serial.println(packet.c_str());
 
     // String response = client.readString();
@@ -177,32 +182,35 @@ void send(void*params){
   vTaskDelete(NULL);
 }
 
-void writeIntArrayIntoEEPROM(int address, int numbers[], int arraySize)
-{
-  int addressIndex = address;
-  for (int i = 0; i < arraySize; i++) 
-  {
-    EEPROM.write(addressIndex, numbers[i] >> 8);
-    EEPROM.write(addressIndex + 1, numbers[i] & 0xFF);
-    addressIndex += 2;
-  }
-}
+// void writeIntArrayIntoEEPROM(int address, int numbers[], int arraySize)
+// {
+//   int addressIndex = address;
+//   for (int i = 0; i < arraySize; i++) 
+//   {
+//     EEPROM.write(addressIndex, numbers[i] >> 8);
+//     EEPROM.write(addressIndex + 1, numbers[i] & 0xFF);
+//     addressIndex += 2;
+//   }
+// }
 
-void readIntArrayFromEEPROM(int address, int numbers[], int arraySize)
-{
-  int addressIndex = address;
-  for (int i = 0; i < arraySize; i++)
-  {
-    numbers[i] = (EEPROM.read(addressIndex) << 8) + EEPROM.read(addressIndex + 1);
-    addressIndex += 2;
-  }
-}
+// void readIntArrayFromEEPROM(int address, int numbers[], int arraySize)
+// {
+//   int addressIndex = address;
+//   for (int i = 0; i < arraySize; i++)
+//   {
+//     numbers[i] = (EEPROM.read(addressIndex) << 8) + EEPROM.read(addressIndex + 1);
+//     addressIndex += 2;
+//   }
+// }
 
 void IRAM_ATTR onTimer(){
   // message_t message;
     
     // buffer[pointer] = analogRead(35);
-    buffer[pointer] = analogRead(35);
+    // buffer[pointer] = analogRead(35);
+    int val = byte(analogRead(35));
+    EEPROM.write(pointer, val);
+    // Serial.printf("%d ",val);
     // EEPROM.put(address, gigga);
     
     // address += sizeof(int);
@@ -210,22 +218,25 @@ void IRAM_ATTR onTimer(){
 
     
   ind++;
-  pointer++;
-    if (pointer == buff_size) {
-      pointer = 0;
-      choice = !choice;
+  pointer+=sizeof(int);
+    if (pointer == buff_size*sizeof(int)) {
+      choice = 0;
+      if (pointer == 2*buff_size){
+        pointer = 0;
+        choice = 1;
+      }
       
-      
+      EEPROM.commit();
+      xTaskCreatePinnedToCore(send, "send", 10000, NULL, 1, NULL, 1);
       Serial.println("send");
-      writeIntArrayIntoEEPROM(address, buffer, buff_size);
-      address += sizeof(int[buff_size]);
+      // writeIntArrayIntoEEPROM(address, buffer, buff_size);
+      // address += sizeof(int[buff_size]);
       // eeprom_write_block((void*)&myStruct, address, sizeof(myStruct));
       // xTaskCreatePinnedToCore(send, "send", 10000, NULL, 1, NULL, 1);
     }
   if (ind > 30000){
     address = 0;
-    EEPROM.commit();
-    xTaskCreatePinnedToCore(send, "send", 10000, NULL, 1, NULL, 1);
+    
     timerDetachInterrupt(My_timer);
   }
 }
