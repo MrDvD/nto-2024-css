@@ -128,16 +128,19 @@ void send(void*params){
     // Serial.println(packet.c_str());
     packet = "";
     for (int i = 0; i<30; i++){
-      // int buffera[buff_size];
+      int buffera[buff_size];
+      readIntArrayFromEEPROM(address, buffera, buff_size);
       // EEPROM.get(address, buffera);
       // address += sizeof(buffer);
+      address += sizeof(int[buff_size]);
+
       for (int j = 0; j < 1000; j++) {
           // Serial.println(buffer[i]);
           // client.printf("%d ", buffer[i]);
-          int val;
-          EEPROM.get(address, val);
-          packet += std::to_string(val);
-          address += sizeof(int);
+          // int val;
+          // EEPROM.get(address, val);
+          packet += std::to_string(buffera[i]);
+          
           packet += " ";
 
       }
@@ -214,10 +217,9 @@ void IRAM_ATTR onTimer(){
       
       
       Serial.println("send");
-      writeIntArrayIntoEEPROM(address, buffer, 1000)
-      address += sizeof(buffer);
+      writeIntArrayIntoEEPROM(address, buffer, buff_size);
+      address += sizeof(int[buff_size]);
       // eeprom_write_block((void*)&myStruct, address, sizeof(myStruct));
-      address += sizeof(buffer);
       // xTaskCreatePinnedToCore(send, "send", 10000, NULL, 1, NULL, 1);
     }
   if (ind > 30000){
