@@ -34,6 +34,8 @@ int packet1_num = 1;
 WiFiClient client;
 WiFiServer server(7020);
 
+bool frees = false;
+
 // void appendFile(fs::FS &fs, const char * path, const char * message){
 //     Serial.printf("Appending to file: %s\r\n", path);
 
@@ -140,6 +142,14 @@ std::string readFile(fs::FS &fs, const char * path, int begin, int end){
     return result;
 }
 
+int sizeFile(fs::FS &fs, const char * path){
+
+    File file = fs.open(path);
+    int size = file.size();
+    file.close();
+    return size;
+}
+
 void IRAM_ATTR onTimer(){
   // message_t message;
   if (!choice){
@@ -156,11 +166,34 @@ void IRAM_ATTR onTimer(){
     if (pointer == buff_size) {
       pointer = 0;
       choice = !choice;
-      xTaskCreatePinnedToCore(send, "send", 10000, NULL, 1, NULL, 1);
+      frees = true;
+      xTaskCreatePinnedToCore(toFile, "file", 10000, NULL, 1, NULL, 1);
     }
-  if (ind > 30000){
+  else if (ind > 30000 && !frees){
+    Serial.println();
+    xTaskCreatePinnedToCore(send, "send", 10000, NULL, 2, NULL, 1);
     timerDetachInterrupt(My_timer);
   }
+}
+
+void toFile(void*params){
+  std::string packet = "";
+  for (int j = 0; j < 1000; j++) {
+        // Serial.println(buffer[i]);
+        // client.printf("%d ", buffer[i]);
+        if (choice){
+          packet += std::to_string(buffer[j]);
+        }
+        else{
+          packet += std::to_string(buffera[j]);
+        }
+        packet += " ";
+
+    }
+  appendFile(LittleFS, "/data.txt", packet.c_str());
+  frees = false;
+  Serial.print(".");
+  vTaskDelete(NULL);
 }
 
 void setupTimer(void* params){
@@ -204,30 +237,22 @@ void send(void*params){
 
   if (client.connected()){
     delay(75);
-    std::string packet = "WAV ";
-    // client.printf(packet.c_str());
-    packet += "1 30 ";
-    packet += std::to_string(packet1_num);
-    packet += " 1000S";
+    std::string packet = readFile(LittleFS, "/data.txt", 0,5);
     client.printf(packet.c_str());
-    delay(75);
+    delay(200);
     // Serial.println(packet.c_str());
     packet = "";
-    for (int j = 0; j < 1000; j++) {
+    int size = (sizeFile(LittleFS, "/data.txt")/1000)+1;
+    for (int j = 0; j < size; j++) {
         // Serial.println(buffer[i]);
         // client.printf("%d ", buffer[i]);
-        if (choice){
-          packet += std::to_string(buffer[j]);
-        }
-        else{
-          packet += std::to_string(buffera[j]);
-        }
-        packet += " ";
-
+        packet = readFile(LittleFS, "/data.txt", 5+1000*j,5+1000*(j+1));
+        client.printf(packet.c_str());
+        delay(250);
+        Serial.println(j);
     }
-      client.printf(packet.c_str());
-      appendFile(LittleFS, "/data.txt", packet.c_str());
-      delay(250);
+      client.printf("S");
+      
       
       // if (k==0){
       //   k+=1;
@@ -235,7 +260,6 @@ void send(void*params){
       // }else{
       //   appendFile(LittleFS, "/data.txt", packet.c_str());
       // }
-      packet = "";
     // Serial.println(packet.c_str());
 
     // String response = client.readString();
@@ -244,8 +268,7 @@ void send(void*params){
     // }
     // Serial.printf("Server response: %s\n", response.c_str());
 
-    packet1_num++;
-    Serial.println(packet1_num);
+
     }else
       Serial.print("#");
 //      client.connect(ip, port);
@@ -284,7 +307,7 @@ void setup() {
         Serial.println("LittleFS Mount Failed");
         return;
     }
-  writeFile(LittleFS, "/data.txt", "MIC 1 ");
+  writeFile(LittleFS, "/data.txt", "WAV 0");
   // QueueHandle = xQueueCreate(QueueElementSize, sizeof(message_t));
   // if(QueueHandle == NULL){
   //   Serial.println("Queue could not be created. Halt.");
