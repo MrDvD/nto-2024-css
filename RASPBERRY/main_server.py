@@ -93,7 +93,7 @@ class Server:
             print(f'Listening on [{self.port}]')
             await server.serve_forever()
     
-    async def get(self, reader, size=10000):
+    async def get(self, reader, size=15000):
         data = await reader.read(size)
         return data.decode()
     
@@ -150,14 +150,17 @@ class Server:
 
     async def on_connect(self, reader, writer):
         message = await self.get(reader)
-        print(message)
+        print(message, 'ENDING')
         if 'WAV' in message:
             # message = await self.get(reader)
             # header, other = message.split('\n')
             if message[-1] != 'S':
                 print('MSG:', message[:50])
-                header, packet = message[:50].split('S')
-                mic, count, idx, freq = map(int, header[4:].split())
+                if 'S' in message:
+                    header, packet = message[:50].split('S')
+                    mic, count, idx, freq = map(int, header[4:].split())
+                else:
+                    packet = message
             else:
                 message = message[:-1]
                 mic, count, idx, freq = map(int, message[4:].split())
@@ -170,11 +173,16 @@ class Server:
             # packet = list(map(lambda x: abs(4095 - int(x)), packet.split()))
             while True:
                 message = await self.get(reader)
+                if message == '':
+                    continue
                 print(message)
                 if message[-1] != 'S':
                     print('MSG:', message[:50] + 'end')
-                    header, packet = message[:50].split('S')
-                    mic, count, idx, freq = map(int, header[4:].split())
+                    if 'S' in message:
+                        header, packet = message[:50].split('S')
+                        mic, count, idx, freq = map(int, header[4:].split())
+                    else:
+                        packet = message
                 else:
                     message = message[:-1]
                     mic, count, idx, freq = map(int, message[4:].split())
