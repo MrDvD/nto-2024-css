@@ -6,7 +6,7 @@
 
 const char ssid[] = "ternary_q";
 const char pass[] = "55555555";
-const char *ip = "192.168.43.130";
+const char *ip = "192.168.43.102";
 int port = 7001;
 
 const int buff_size = 1000;
