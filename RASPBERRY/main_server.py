@@ -22,7 +22,7 @@ class Plot:
         # self.ax2.set_xlabel("Frequency [Hz]")
         # self.ax2.set_ylabel("Amplitude, 10^3")
         self.texts = list()
-        self.secs = 30
+        self.secs = 10
     
     def calc_vals(self, Y):
         return list(map(beautify, [np.mean(Y), np.median(Y), np.max(Y), np.min(Y), np.std(Y)]))
@@ -58,13 +58,15 @@ class Plot:
         elif mode == 'rfft':
             Y = 2 * np.fft.rfft(Y)
             t = np.arange(1, len(Y)) * freq / len(Y)
+            for i in range(20):
+                Y[i] = 0.3 * Y[i]
             if mic:
                 self.ax4.clear()
-                self.ax4.plot(t, abs(Y)[1:] / 1000)
+                self.ax4.plot(t / 2, abs(Y)[1:] / 1000)
                 self.ax4.grid()
             else:
                 self.ax2.clear()
-                self.ax2.plot(t, abs(Y)[1:] / 1000)
+                self.ax2.plot(t / 2, abs(Y)[1:] / 1000)
                 self.ax2.grid()
             self.fig.savefig('../FLASK/website/media/mic2.jpg', dpi=150)
     
@@ -145,21 +147,21 @@ class Server:
                 self.plot.plot_graphs(mic, freq, data, 'signal')
                 self.plot.plot_graphs(mic, freq, data, 'rfft')
                 self.update_db(mic, data)
-        self.plot.export_figs()
+            self.plot.export_figs()
         if not self.poll.done():
             self.poll.set_result('POL')
     
-    def append_wav(self, mic, packet):
-        packet = re.sub(r'WAV.*S', '', packet)
-        with open(f'mic{mic}.data', 'a') as f:
-            f.write(packet)
+    def clear_data(self, name):
+        with open(name, 'w') as f:
+            f.write('')
     
     async def on_connect(self, reader, writer):
         message = await self.get(reader)
+        print('CMD:', message)
         if 'WAV' in message:
             try:
-                print('CMD:', message)
                 cmd, mic = message.split()
+                self.clear_data(f'mic{mic}.data')
                 packet = ''
                 while True:
                     msg = await self.get(reader)
