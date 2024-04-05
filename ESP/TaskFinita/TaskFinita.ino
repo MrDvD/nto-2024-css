@@ -308,7 +308,7 @@ void setup() {
         Serial.println("LittleFS Mount Failed");
         return;
     }
-  writeFile(LittleFS, "/data.txt", "WAV 0");
+  writeFile(LittleFS, "/data.txt", "WAV 1");
   // QueueHandle = xQueueCreate(QueueElementSize, sizeof(message_t));
   // if(QueueHandle == NULL){
   //   Serial.println("Queue could not be created. Halt.");
