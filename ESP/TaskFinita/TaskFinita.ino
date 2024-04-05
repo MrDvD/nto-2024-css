@@ -36,53 +36,6 @@ WiFiServer server(7020);
 
 bool frees = false;
 
-// void appendFile(fs::FS &fs, const char * path, const char * message){
-//     Serial.printf("Appending to file: %s\r\n", path);
-
-//     File file = fs.open(path, FILE_APPEND);
-//     if(!file){
-//         Serial.println("- failed to open file for appending");
-//         return;
-//     }
-//     if(file.print(message)){
-//         Serial.println("- message appended");
-//     } else {
-//         Serial.println("- append failed");
-//     }
-//     file.close();
-// }
-
-// void readFile(fs::FS &fs, const char * path){
-//     Serial.printf("Reading file: %s\r\n", path);
-
-//     File file = fs.open(path);
-//     if(!file || file.isDirectory()){
-//         Serial.println("- failed to open file for reading");
-//         return;
-//     }
-
-//     Serial.println("- read from file:");
-//     while(file.available()){
-//         Serial.write(file.read());
-//     }
-//     file.close();
-// }
-
-// void writeFile(fs::FS &fs, const char * path, const char * message){
-//     Serial.printf("Writing file: %s\r\n", path);
-
-//     File file = fs.open(path, FILE_WRITE);
-//     if(!file){
-//         Serial.println("- failed to open file for writing");
-//         return;
-//     }
-//     if(file.print(message)){
-//         Serial.println("- file written");
-//     } else {
-//         Serial.println("- write failed");
-//     }
-//     file.close();
-// }
 
 void writeFile(fs::FS &fs, const char * path, const char * message){
     Serial.printf("Writing file: %s\r\n", path);
@@ -269,36 +222,20 @@ void send(void*params){
         // Serial.println(packet.c_str());
     }
       client.printf("S");
-      
-      
-      // if (k==0){
-      //   k+=1;
-      //   writeFile(LittleFS, "/data.txt", packet.c_str());
-      // }else{
-      //   appendFile(LittleFS, "/data.txt", packet.c_str());
-      // }
-    // Serial.println(packet.c_str());
 
-    // String response = client.readString();
-    // if (response == "") {
-    //   return;
-    // }
-    // Serial.printf("Server response: %s\n", response.c_str());
-
-
-    }else
-      Serial.print("#");
-    deleteFile(LittleFS, "/data.txt");
-    writeFile(LittleFS, "/data.txt", "");
+  }else
+    Serial.print("#");
+  deleteFile(LittleFS, "/data.txt");
+  writeFile(LittleFS, "/data.txt", "");
 //      client.connect(ip, port);
-    if (packet1_num==31){
-      packet1_num = 0;
-      client.stop();
-      Serial.println("Disconnected");
-      std::string fill = readFile(LittleFS, "/data.txt", 0,100);
-      Serial.println(fill.c_str());
+  if (packet1_num==31){
+    packet1_num = 0;
+    client.stop();
+    Serial.println("Disconnected");
+    std::string fill = readFile(LittleFS, "/data.txt", 0,100);
+    Serial.println(fill.c_str());
 
-    }
+  }
     
   vTaskDelete(NULL);
 }
@@ -326,13 +263,6 @@ void setup() {
         Serial.println("LittleFS Mount Failed");
         return;
     }
-  
-  // QueueHandle = xQueueCreate(QueueElementSize, sizeof(message_t));
-  // if(QueueHandle == NULL){
-  //   Serial.println("Queue could not be created. Halt.");
-  //   delay(1000);
-  //   ESP.restart(); // Halt at this point as is not possible to continue
-  // }
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, pass);
@@ -345,22 +275,10 @@ void setup() {
   }
   
   server.begin();
-//  client.connect(ip, port);
-//  while (!client.connected()){
-//    Serial.print(".");
-//    delay(100);
-//    client.connect(ip, port);
-//  }
 
-  // if(!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)){
-  //       Serial.println("LittleFS Mount Failed");
-  //   }
-
-//  xTaskCreatePinnedToCore(setupTimer, "time", 10000, NULL, 1, NULL, 1);
   deleteFile(LittleFS, "/data.txt");
   writeFile(LittleFS, "/data.txt", "WAV 0");
   xTaskCreatePinnedToCore(listen_for_rec, "listen_rec", 10000, NULL, 1, &handler_rec, 1);
-  // xTaskCreatePinnedToCore(recieve, "recieve", 10000, NULL, 1, NULL, 0);
 }
 void loop() {
  delay(100);
