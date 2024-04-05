@@ -8,7 +8,7 @@
 
 const char ssid[] = "ternary_q";
 const char pass[] = "55555555";
-const char *ip = "192.168.43.190";
+const char *ip = "10.42.0.1";
 int port = 7001;
 
 const int buff_size = 1000;
@@ -223,6 +223,7 @@ void listen_for_rec(void *params) {
 //              delay(100);
 //              client.connect(ip, port);
 //            }
+            writeFile(LittleFS, "/data.txt", "WAV 0");
             frees = false;
             xTaskCreatePinnedToCore(setupTimer, "time", 10000, NULL, 1, NULL, 1);
           }
@@ -308,7 +309,7 @@ void setup() {
         Serial.println("LittleFS Mount Failed");
         return;
     }
-  writeFile(LittleFS, "/data.txt", "WAV 1");
+  
   // QueueHandle = xQueueCreate(QueueElementSize, sizeof(message_t));
   // if(QueueHandle == NULL){
   //   Serial.println("Queue could not be created. Halt.");
