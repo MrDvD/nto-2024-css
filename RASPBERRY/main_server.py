@@ -140,7 +140,7 @@ class Server:
             with open(f'mic{mic}.data') as f:
                 data = f.read()
             data = list(map(lambda x: abs(4095 - int(x)), data.split()))
-            print(data, 'data')
+            print(mic, len(data))
             if data:
                 self.plot.plot_graphs(mic, freq, data, 'signal')
                 self.plot.plot_graphs(mic, freq, data, 'rfft')
@@ -163,7 +163,7 @@ class Server:
                 packet = ''
                 while True:
                     msg = await self.get(reader)
-                    print('MSG:', len(msg))
+                    print(f'MIC {mic}:', len(msg))
                     packet += msg
                     if packet[-1] == 'S':
                         packet = packet[:-1]
@@ -180,9 +180,9 @@ class Server:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((cfg['mic0_ip'], cfg['back_port']))
                 sock.sendall('REC'.encode())
-            # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            #     sock.connect((cfg['mic1_ip'], cfg['back_port']))
-            #     sock.sendall('REC'.encode())
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((cfg['mic1_ip'], cfg['back_port']))
+                sock.sendall('REC'.encode())
             print('rec_sent')
         print('close')
         await self.close(writer)
